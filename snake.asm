@@ -4,7 +4,7 @@ xSnake: .word -1:256
 ySnake: .word -1:256
 xApple: .word 11
 yApple: .word 7
-snakeSize: .word 0
+snakeSize: .word 2
 snakeDir: .word 100	# Starting direction is 'd' (100 in ASCII)
 
 rastorage: .word 0
@@ -41,8 +41,14 @@ sw $t1, 4($a0)
 la $a1, ySnake
 li $t1, 7
 sw $t1, 4($a1)  
-   
-jal print
+  
+gameLoop:
+	jal print
+	jal getDir
+	jal update
+	jal print
+	jal Sleep
+j gameLoop
 
 li $v0, 10
 syscall
@@ -126,7 +132,7 @@ isInSnake: # Receives to $a0 and $a1 coords x and y. Receives to $a2 xSnake (And
 		jr $ra
 
 
-print: # This function receives to $a0 snakeX, to $a1 snakeY
+print: 
 
 	li $t4, 0
 	li $t8, 0
@@ -212,13 +218,213 @@ print: # This function receives to $a0 snakeX, to $a1 snakeY
 	jr $ra
 
 
-getDir:
+getDir:	# This function returns to $v0 a direction input by the user
+
+	lw $t0, rcontrol
+	lw $t1, rdata	
 	
+	reading_loop:
+	
+		lw $t2, 0($t0)
+		andi $t2, $t2, 0x1
+		bne $t2, 1, reading_loop
+	
+	lw $t2, 0($t1)	# The direction input by the user is in $t2 now.
+	lw $t3, snakeDir # The direction of the snake is in $t3.
+	
+	# The only rule the input has to follow is that it cant be opposite to the snake direction.
+    	# Opposite pairs: 'w'↔'s', 'a'↔'d'
+   	# If they are NOT opposite, branch to isValid	
+	
+	li $t4, 119 # w
+	li $t5, 115 # s
+	li $t6, 97 # a
+	li $t7, 100 # d
+	
+	beq $t3, $t4, chk1 # If $t3 = w
+	beq $t3, $t5, chk2 # If $t3 = s
+	beq $t3, $t6, chk3 # If $t3 = a
+	beq $t3, $t7, chk4 # If $t3 = d	
+	j invalid
+	
+	chk1:
+		beq $t2, $t5, invalid # If $t2 = s, they are opposites
+		j isValid
+	
+	chk2:
+		beq $t2, $t4, invalid # If $t2 = w, they are opposites
+		j isValid
+	
+	chk3:
+		beq $t2, $t7, invalid # If $t2 = d, they are opposites
+		j isValid
+	
+	chk4:
+		beq $t2, $t6, invalid # If $t2 = a, they are opposites
+		j isValid
+		
+	isValid:
+		
+		sw $t2, snakeDir
+	
+	invalid:
+
+		jr $ra
 
 
 
 
-move:
+
+
+update:
+
+# **BODY**
+
+lw $t2, snakeSize
+addi $t2, $t2, -1
+li $t3, 0
+li $t4, 0
+la $t5, xSnake
+la $t6, ySnake
+li $t8, 0
+
+shiftloop:
+
+	sll $t4, $t8, 2  # Iteration x 4
+	add $t7, $t6, $t4 # ySnake adr + iterationx4
+	add $t4, $t5, $t4 # xSnake ad + iterationx4
+
+	lw $t3, 0($t7)
+	sw $t3, 4($t7)
+
+	lw $t3, 0($t4)
+	sw $t3, 4($t4)
+
+	addi $t8, $t8, 1
+	bne $t8, $t2, shiftloop # it stops at size -1
+
+
+# **HEAD**
+
+# w : 119
+# s : 115
+# d : 100
+# a : 97
+
+lw $t0, snakeDir
+
+beq $t0, 119, moveup
+beq $t0, 115, movedown
+beq $t0, 100, moveright
+beq $t0, 98, moveleft
+
+moveup:
+	lw $t1, ySnake
+	addi $t1, $t1, 1
+	sw $t1, ySnake
+	j backmain
+
+movedown:
+	lw $t1, ySnake
+	addi $t1, $t1, -1
+	sw $t1, ySnake
+	j backmain
+
+moveright:
+	lw $t1, xSnake
+	addi $t1, $t1, 1
+	sw $t1, xSnake
+	j backmain
+
+moveleft:
+	lw $t1, xSnake
+	addi $t1, $t1, -1
+	sw $t1, xSnake
+	j backmain
+
+backmain:
+	jr $ra
+
+
+
+
+
+
+updateAndExtend:
+
+# **BODY**
+
+lw $t2, snakeSize
+li $t3, 0
+li $t4, 0
+la $t5, xSnake
+la $t6, ySnake
+li $t8, 0
+
+shiftloop2:
+
+	sll $t4, $t8, 2  # Iteration x 4
+	add $t7, $t6, $t4 # ySnake adr + iterationx4
+	add $t4, $t5, $t4 # xSnake ad + iterationx4
+
+	lw $t3, 0($t7)
+	sw $t3, 4($t7)
+
+	lw $t3, 0($t4)
+	sw $t3, 4($t4)
+
+	addi $t8, $t8, 1
+	bne $t8, $t2, shiftloop2 # it stops at size
+
+	lw $t7, snakeSize
+	addi $t7, $t7, 1
+	sw $t7, snakeSize
+
+
+
+
+# **HEAD**
+
+lw $t0, snakeDir
+
+# w : 119
+# s : 115
+# d : 100
+# a : 97
+
+beq $t0, 119, moveup2
+beq $t0, 115, movedown2
+beq $t0, 100, moveright2
+beq $t0, 98, moveleft2
+
+moveup2:
+	lw $t1, ySnake
+	addi $t1, $t1, 1
+	sw $t1, ySnake
+	j backmain2
+	
+movedown2:
+	lw $t1, ySnake
+	addi $t1, $t1, -1
+	sw $t1, ySnake
+	j backmain2
+	
+moveright2:
+	lw $t1, xSnake
+	addi $t1, $t1, 1
+	sw $t1, xSnake
+	j backmain2
+	
+moveleft2:
+	lw $t1, xSnake
+	addi $t1, $t1, -1
+	sw $t1, xSnake
+	j backmain2
+	
+backmain2:
+	jr $ra
+
+
 
 
 
@@ -226,19 +432,16 @@ move:
 AteApple:
 
 
-
-
 GenApple:
-
-
-
-
 
 
 Died:
 
 
 
-
-
 Sleep:
+
+	li $a0, 200
+	li $v0, 32
+	syscall
+	jr $ra
