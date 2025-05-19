@@ -47,7 +47,6 @@ gameLoop:
 	jal getDir
 	jal update
 	jal print
-	jal Sleep
 j gameLoop
 
 li $v0, 10
@@ -233,7 +232,7 @@ getDir:	# This function returns to $v0 a direction input by the user
 	lw $t3, snakeDir # The direction of the snake is in $t3.
 	
 	# The only rule the input has to follow is that it cant be opposite to the snake direction.
-    	# Opposite pairs: 'w'↔'s', 'a'↔'d'
+    	# Opposite pairs: 'w'?'s', 'a'?'d'
    	# If they are NOT opposite, branch to isValid	
 	
 	li $t4, 119 # w
@@ -316,17 +315,17 @@ lw $t0, snakeDir
 beq $t0, 119, moveup
 beq $t0, 115, movedown
 beq $t0, 100, moveright
-beq $t0, 98, moveleft
+beq $t0, 97, moveleft
 
 moveup:
 	lw $t1, ySnake
-	addi $t1, $t1, 1
+	addi $t1, $t1, -1
 	sw $t1, ySnake
 	j backmain
 
 movedown:
 	lw $t1, ySnake
-	addi $t1, $t1, -1
+	addi $t1, $t1, 1
 	sw $t1, ySnake
 	j backmain
 
@@ -395,17 +394,17 @@ lw $t0, snakeDir
 beq $t0, 119, moveup2
 beq $t0, 115, movedown2
 beq $t0, 100, moveright2
-beq $t0, 98, moveleft2
+beq $t0, 97, moveleft2
 
 moveup2:
 	lw $t1, ySnake
-	addi $t1, $t1, 1
+	addi $t1, $t1, -1
 	sw $t1, ySnake
 	j backmain2
 	
 movedown2:
 	lw $t1, ySnake
-	addi $t1, $t1, -1
+	addi $t1, $t1, 1
 	sw $t1, ySnake
 	j backmain2
 	
@@ -425,11 +424,10 @@ backmain2:
 	jr $ra
 
 
+AteApple: 
+	
+	
 
-
-
-
-AteApple:
 
 
 GenApple:
