@@ -1,4 +1,4 @@
-.data
+.data 
 
 xSnake: .word -1:256
 ySnake: .word -1:256
@@ -46,7 +46,11 @@ gameLoop:
 	jal print
 	jal getDir
 	jal update
-	jal print
+	jal isEating
+	move $a0, $v0
+	li $v0, 1
+	syscall
+
 j gameLoop
 
 li $v0, 10
@@ -424,7 +428,48 @@ backmain2:
 	jr $ra
 
 
-AteApple: 
+isEating: # This function returns to $v0 wether or not the snake is gonna eat an apple with the current direction
+
+	lw $t0, xSnake	# Snake coordinates
+	lw $t1, ySnake # Snake coordinates
+	lw $t2, xApple # Apple coordinates
+	lw $t3, yApple # Apple coordinates
+	lw $t4, snakeDir # Snake direction
+
+	beq $t4, 119, moveup3
+	beq $t4, 115, movedown3
+	beq $t4, 100, moveright3
+	beq $t4, 97, moveleft3
+
+	moveup3:
+		addi $t1, $t1, -1
+
+	movedown3:
+		addi $t1, $t1, 1
+	
+	moveright3:
+		addi $t0, $t0, 1
+	
+	moveleft3:
+		addi $t0, $t0, -1
+
+	
+	beq $t0, $t2, equalfirst
+	j backmain3
+		
+		equalfirst:
+			beq $t1, $t3, equalsecond
+			j backmain3
+			
+			equalsecond:
+				li $v0, 1
+				j backmain3	
+		
+	
+backmain3:
+		jr $ra
+
+
 	
 	
 
@@ -442,4 +487,4 @@ Sleep:
 	li $a0, 200
 	li $v0, 32
 	syscall
-	jr $ra
+	jr $ra 
