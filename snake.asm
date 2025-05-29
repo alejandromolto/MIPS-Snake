@@ -45,12 +45,12 @@ sw $t1, 4($a1)
 gameLoop:
 	jal print
 	jal getDir
-	jal update
 	jal isEating
-	move $a0, $v0
-	li $v0, 1
-	syscall
-
+		move $a0, $v0
+		li $v0, 1
+		syscall
+	jal update
+	jal Sleep
 j gameLoop
 
 li $v0, 10
@@ -443,22 +443,25 @@ isEating: # This function returns to $v0 wether or not the snake is gonna eat an
 
 	moveup3:
 		addi $t1, $t1, -1
-
+		j compare
 	movedown3:
 		addi $t1, $t1, 1
-	
+		j compare	
 	moveright3:
 		addi $t0, $t0, 1
-	
+		j compare	
 	moveleft3:
 		addi $t0, $t0, -1
-
+		j compare
 	
+	compare:
 	beq $t0, $t2, equalfirst
+	li $v0, 0
 	j backmain3
 		
 		equalfirst:
 			beq $t1, $t3, equalsecond
+			li $v0, 0
 			j backmain3
 			
 			equalsecond:
@@ -469,16 +472,15 @@ isEating: # This function returns to $v0 wether or not the snake is gonna eat an
 backmain3:
 		jr $ra
 
-
-	
-	
-
-
-
 GenApple:
 
 
+
+
+
 Died:
+
+
 
 
 
