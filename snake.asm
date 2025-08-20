@@ -41,15 +41,23 @@ sw $t1, 4($a0)
 la $a1, ySnake
 li $t1, 7
 sw $t1, 4($a1)  
-  
+
+
+
 gameLoop:
 	jal print
 	jal getDir
 	jal isEating
+	beq $v0, 0, notExtend
+	jal updateAndExtend
+	j keepgoing
+	notExtend:
+		jal update
+	keepgoing:
+	jal isDead
 		move $a0, $v0
 		li $v0, 1
 		syscall
-	jal update
 	jal Sleep
 j gameLoop
 
@@ -74,7 +82,7 @@ display: # Receives to $a0 the character it wants to display and it displays it.
 	
 	jr $ra
 
-isApple: # Receives to $a0 and $a1 coords x and y. Receives to $a2 xApple direction and to $a3 the yApple direction. Returns to v0 wether or not is the apple.
+isApple: # Receives to $a0 and $a1 coords x and y. Receives to $a2 xApple direction and to $a3 the yApple direction. Returns to $v0 wether or not is the apple.
 
 
 	lw $t0, 0($a2)	# Stores in t0 xApple
@@ -289,22 +297,20 @@ li $t3, 0
 li $t4, 0
 la $t5, xSnake
 la $t6, ySnake
-li $t8, 0
+move $t8, $t2
 
 shiftloop:
-
-	sll $t4, $t8, 2  # Iteration x 4
-	add $t7, $t6, $t4 # ySnake adr + iterationx4
-	add $t4, $t5, $t4 # xSnake ad + iterationx4
-
-	lw $t3, 0($t7)
-	sw $t3, 4($t7)
-
-	lw $t3, 0($t4)
-	sw $t3, 4($t4)
-
-	addi $t8, $t8, 1
-	bne $t8, $t2, shiftloop # it stops at size -1
+	beq $t8, $zero, shiftdone
+	sll $t4, $t8, 2
+	add $t7, $t6, $t4
+	add $t4, $t5, $t4
+	lw $t3, -4($t7)
+	sw $t3, 0($t7)
+	lw $t3, -4($t4)
+	sw $t3, 0($t4)
+	addi $t8, $t8, -1
+	j shiftloop
+shiftdone:
 
 
 # **HEAD**
@@ -362,28 +368,24 @@ li $t3, 0
 li $t4, 0
 la $t5, xSnake
 la $t6, ySnake
-li $t8, 0
+move $t8, $t2
 
 shiftloop2:
+	beq $t8, $zero, shiftdone2
+	sll $t4, $t8, 2
+	add $t7, $t6, $t4
+	add $t4, $t5, $t4
+	lw $t3, -4($t7)
+	sw $t3, 0($t7)
+	lw $t3, -4($t4)
+	sw $t3, 0($t4)
+	addi $t8, $t8, -1
+	j shiftloop2
+shiftdone2:
 
-	sll $t4, $t8, 2  # Iteration x 4
-	add $t7, $t6, $t4 # ySnake adr + iterationx4
-	add $t4, $t5, $t4 # xSnake ad + iterationx4
-
-	lw $t3, 0($t7)
-	sw $t3, 4($t7)
-
-	lw $t3, 0($t4)
-	sw $t3, 4($t4)
-
-	addi $t8, $t8, 1
-	bne $t8, $t2, shiftloop2 # it stops at size
-
-	lw $t7, snakeSize
-	addi $t7, $t7, 1
-	sw $t7, snakeSize
-
-
+lw $t7, snakeSize # INCREMENTING SIZE OF THE SNAKE
+addi $t7, $t7, 1
+sw $t7, snakeSize
 
 
 # **HEAD**
@@ -478,11 +480,56 @@ GenApple:
 
 
 
-Died:
+isDead: # Returns to $v0 wether the snake is dead or not.
 
+	li $v0, 0 # The standard case is the snake is not dead.
 
+	# If the head coordinates are the same as any other coordinates in the snake, the snake is dead.
 
+	li $t0, 1
+	lw $t1, snakeSize
+	la $t6, xSnake
+	la $t7, ySnake
 
+	isDeadLoop:
+		beq $t0, $t1, exitDeadLoop # When the number of iteration is equal to the size of the snake, we can stop.
+		sll $t2, $t0, 2
+		add $t8, $t6, $t2 # $t8 = xSnake + currentIter * 4
+		add $t9, $t7, $t2 # $t9 = ySnake + currentIter * 4
+		addi $t0, $t0, 1
+	
+		lw $t3, ($t6) # xSnake (head)
+		lw $t4, ($t8) # xSnake (body part, whichever)
+		bne $t3, $t4, isDeadLoop # If they are not equal, we keep the loop
+	
+		lw $t3, ($t7) # ySnake (head)
+		lw $t4, ($t9) # ySnake (body part, whichever)	
+		bne $t3, $t4, isDeadLoop # If they are not equal, we keep the loop
+	
+		li $v0, 1 # If it has arrived to this point, both are equal meaning the snake is dead, and it can go back to main.
+		j backmain4
+	
+	exitDeadLoop:	
+		
+
+	# If the head coordinates are out of bounds, the snake is dead.
+
+	lw $t0, xSnake
+	lw $t1, ySnake
+	
+	blt $t0, 0, outOfBoundsDead
+	bgt $t0, 15, outOfBoundsDead
+	blt $t1, 0, outOfBoundsDead
+	bgt $t1, 15, outOfBoundsDead
+	
+	j backmain4 # If it has made it here, it is not out of loops.
+	
+	outOfBoundsDead:
+		li $v0, 1
+		
+	backmain4:
+		jr $ra
+	
 
 Sleep:
 
