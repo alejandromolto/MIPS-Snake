@@ -7,6 +7,9 @@ yApple: .word 7
 snakeSize: .word 2
 snakeDir: .word 100	# Starting direction is 'd' (100 in ASCII)
 
+xAllPossibleCoords: .word -1:256
+yAllPossibleCoords: .word -1:256
+
 rastorage: .word 0
 
 rcontrol: .word 0xFFFF0000
@@ -55,14 +58,14 @@ gameLoop:
 		jal update
 	keepgoing:
 	jal isDead
-		move $a0, $v0
-		li $v0, 1
-		syscall
+	beq $v0, 1, exitGame
 	jal Sleep
 j gameLoop
 
-li $v0, 10
-syscall
+
+exitGame:
+	li $v0, 10
+	syscall
 
 
 
@@ -475,6 +478,44 @@ backmain3:
 		jr $ra
 
 GenApple:
+
+	la $t2, xAllPossibleCoords
+	la $t2, yAllPossibleCoords
+	sw $ra, rastorage
+
+	# Firstly, we want to append every coordinate in the map that is not inside the snake to this array.
+	# Luckily, there is a function for that already defined, (isInSnake).
+	
+	li $t0, 0 # This will represent the x in each coordinate.
+	li $t1, 0 # This will represent the y in each coordinate.
+	li $t2, 0 # This will represent the size of the new array.
+	
+	outerforloop:
+		li $t1, 0
+		innerforloop:	
+			move $a0, $t0
+			move $a1, $t1
+			jal isInSnake
+			beq $v0, 1, notAppend
+			
+			# APPEND HERE
+			
+			
+			notAppend:
+
+			addi $t1, $t1, 1
+			bne $t1, 16, innerforloop
+			
+		bne $t0, 16, outerforloop
+		addi $t0, $t0, 1
+		j outerforloop
+
+			
+
+
+
+
+
 
 
 
