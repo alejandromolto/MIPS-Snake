@@ -11,75 +11,186 @@ xAllPossibleCoords: .word -1:256
 yAllPossibleCoords: .word -1:256
 
 rastorage: .word 0
+rastorage2: .word 0
 var1storage: .word 0
 var2storage: .word 0
 var3storage: .word 0
-
 
 rcontrol: .word 0xFFFF0000
 rdata: .word 0xFFFF0004
 tcontrol: .word 0xFFFF0008
 tdata:.word 0xFFFF000C
 
-
+mainMenuMessage: .asciiz "\n\n\n\n\n\n\n**WELCOME TO MIPS-SNAKE** \n Work done by alejandromolto. \n \n OPTIONS: \n \n (1) Play Snake. \n (2) Settings. \n (3) Exit. \n\n\n\n\n\n\n"
+optionsMenuMessage: .asciiz "\n\n\n\n\n\n\n**SETTINGS:** \n \n DIFFICULTY: \n\n (1) Easy. \n (2) Mid. \n (3) Hard. \n\n\n\n\n\n\n "
 .text
 .globl main
 
 main:
 
-
-# INITIALIZING THE SNAKE VALUES.
-
-li $t1, 2
-sw $t1, snakeSize	
-
-la $a0, xSnake
-li $t1, 4
-sw $t1, 0($a0)
-
-la $a1, ySnake
-li $t1, 7
-sw $t1, 0($a1)    
-    
-la $a0, xSnake
-li $t1, 3
-sw $t1, 4($a0)
-
-la $a1, ySnake
-li $t1, 7
-sw $t1, 4($a1)  
-
-
-
-gameLoop:
-	jal print
-	jal getDir
-	jal isEating
-	beq $v0, 0, noApple
-	jal GenApple
-		sw $v0, xApple
-		sw $v1, yApple
 	
-	noApple:
-	beq $v0, 0, notExtend
-	jal updateAndExtend
-	j keepgoing
-	notExtend:
-		jal update
-	keepgoing:
-	jal isDead
-	beq $v0, 1, exitGame
+	
+	jal mainMenu
+	beq $v0, 49, postSpeedGame
+	beq $v0, 50, gameOptions
+	beq $v0, 51, exitGame
+	
+	game:
+	
+	li $s0, 200 # Variable preserved across temporary calls. Represents the length of each tick in miliseconds (by default 200ms).
 
-j gameLoop
+	postSpeedGame:
+	
+	# INITIALIZING THE SNAKE VALUES.
+	li $t1, 2
+	sw $t1, snakeSize	
 
+	la $a0, xSnake
+	li $t1, 4
+	sw $t1, 0($a0)
 
-exitGame:
-	li $v0, 10
-	syscall
+	la $a1, ySnake
+	li $t1, 7
+	sw $t1, 0($a1)    
+    
+	la $a0, xSnake
+	li $t1, 3
+	sw $t1, 4($a0)
 
+	la $a1, ySnake
+	li $t1, 7
+	sw $t1, 4($a1)  
+	
+	gameLoop:
+		jal print
+		jal getDir
+		jal isEating
+		beq $v0, 0, noApple
+		jal GenApple
+			sw $v0, xApple
+			sw $v1, yApple
+	
+		noApple:
+		beq $v0, 0, notExtend
+		jal updateAndExtend
+		j keepgoing
+		notExtend:
+			jal update
+		keepgoing:
+		jal isDead
+		beq $v0, 1, exitGame
 
+		j gameLoop
+	
+	gameOptions:
+		jal optionsMenu
+		beq $v0, 49, easy
+		beq $v0, 50, mid
+		beq $v0, 51, hard
+		
+		easy:
+			li $s0, 200
+			j main
+		mid:
+			li $s0, 150		
+			j main
+		hard:
+			li $s0, 125				
+			j main
 
+	exitGame:
+		li $v0, 10
+		syscall
 
+	
+mainMenu: # Returns to $v0 the option of the user
+
+	# PRINTING (OUTPUT)
+
+	sw $ra, rastorage2
+	
+	la $a0, mainMenuMessage 
+	jal printString 
+
+	lw $ra, rastorage2
+	
+	# READING (INPUT)
+	
+	lw $t0, rcontrol
+	lw $t1, rdata
+	
+	mainMenuReadLoop:
+	
+		lw $t2, 0($t0)
+		andi $t2, $t2, 0x1
+		bne $t2, 1, mainMenuReadLoop
+		
+		lw $t2, 0($t1)	# Input
+
+	bgt $t2, 51, mainMenuReadLoop # If input is not on range (0, 3), it goes back to the loop 
+	blt $t2, 49, mainMenuReadLoop
+
+		
+	move $v0, $t2
+	jr $ra
+
+optionsMenu: # Returns to $v0 the option of the user
+
+	# PRINTING (OUTPUT)
+
+	sw $ra, rastorage2
+	
+	la $a0, optionsMenuMessage 
+	jal printString 
+
+	lw $ra, rastorage2
+	
+	# READING (INPUT)
+	
+	lw $t0, rcontrol
+	lw $t1, rdata
+	
+	optionsMenuReadLoop:
+	
+		lw $t2, 0($t0)
+		andi $t2, $t2, 0x1
+		bne $t2, 1, optionsMenuReadLoop
+		
+		lw $t2, 0($t1)	# Input
+		
+		move $a0, $t2
+		li $v0, 1
+		syscall
+
+	bgt $t2, 51, optionsMenuReadLoop # If input is not on range (0, 3), it goes back to the loop 
+	blt $t2, 49, optionsMenuReadLoop
+
+		
+	move $v0, $t2
+	jr $ra
+			
+printString: # Receives to $a0 the adress of the string
+	
+	move $t0, $a0
+
+	printMenuLoop:
+		lb $t1, 0($t0)
+		beq $t1, $zero, menuLoopExit
+		 
+		sw $ra, rastorage # ra storage
+		sw $t0, var1storage # Temporary variable storage (as it is not preserved across procedure calls)
+		
+		move $a0, $t1
+		jal display
+
+		lw $ra, rastorage
+		lw $t0, var1storage		
+		
+		addi $t0, $t0, 1
+		j printMenuLoop
+	
+	menuLoopExit:
+	jr $ra
 
 display: # Receives to $a0 the character it wants to display and it displays it.
 
@@ -261,7 +372,7 @@ getDir:	# This function returns to $v0 a direction input by the user
 			li $v0, 30
 			syscall
 			sub $t8, $a0, $t9
-			bge $t8, 200, invalid # time restriction
+			bge $t8, $s0, invalid # time restriction
 	
 			bne $t2, 1, reading_loop
 	
@@ -308,7 +419,7 @@ getDir:	# This function returns to $v0 a direction input by the user
 	li $v0, 30
 	syscall
 	sub $t9, $a0, $t9
-	blt $t9, 200, input_loop
+	blt $t9, $s0, input_loop
 	
 	jr $ra		
 
