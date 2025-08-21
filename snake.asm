@@ -11,6 +11,10 @@ xAllPossibleCoords: .word -1:256
 yAllPossibleCoords: .word -1:256
 
 rastorage: .word 0
+var1storage: .word 0
+var2storage: .word 0
+var3storage: .word 0
+
 
 rcontrol: .word 0xFFFF0000
 rdata: .word 0xFFFF0004
@@ -51,6 +55,12 @@ gameLoop:
 	jal print
 	jal getDir
 	jal isEating
+	beq $v0, 0, noApple
+	jal GenApple
+		sw $v0, xApple
+		sw $v1, yApple
+	
+	noApple:
 	beq $v0, 0, notExtend
 	jal updateAndExtend
 	j keepgoing
@@ -59,7 +69,7 @@ gameLoop:
 	keepgoing:
 	jal isDead
 	beq $v0, 1, exitGame
-	jal Sleep
+
 j gameLoop
 
 
@@ -234,58 +244,75 @@ print:
 
 getDir:	# This function returns to $v0 a direction input by the user
 
-	lw $t0, rcontrol
-	lw $t1, rdata	
-	
-	reading_loop:
-	
-		lw $t2, 0($t0)
-		andi $t2, $t2, 0x1
-		bne $t2, 1, reading_loop
-	
-	lw $t2, 0($t1)	# The direction input by the user is in $t2 now.
-	lw $t3, snakeDir # The direction of the snake is in $t3.
-	
-	# The only rule the input has to follow is that it cant be opposite to the snake direction.
-    	# Opposite pairs: 'w'?'s', 'a'?'d'
-   	# If they are NOT opposite, branch to isValid	
-	
-	li $t4, 119 # w
-	li $t5, 115 # s
-	li $t6, 97 # a
-	li $t7, 100 # d
-	
-	beq $t3, $t4, chk1 # If $t3 = w
-	beq $t3, $t5, chk2 # If $t3 = s
-	beq $t3, $t6, chk3 # If $t3 = a
-	beq $t3, $t7, chk4 # If $t3 = d	
-	j invalid
-	
-	chk1:
-		beq $t2, $t5, invalid # If $t2 = s, they are opposites
-		j isValid
-	
-	chk2:
-		beq $t2, $t4, invalid # If $t2 = w, they are opposites
-		j isValid
-	
-	chk3:
-		beq $t2, $t7, invalid # If $t2 = d, they are opposites
-		j isValid
-	
-	chk4:
-		beq $t2, $t6, invalid # If $t2 = a, they are opposites
-		j isValid
+	input_loop:
+		li $v0, 30
+		syscall
+		move $t9, $a0
 		
-	isValid:
 		
-		sw $t2, snakeDir
+		lw $t0, rcontrol
+		lw $t1, rdata	
 	
-	invalid:
+		reading_loop:
+	
+			lw $t2, 0($t0)
+			andi $t2, $t2, 0x1
+			
+			li $v0, 30
+			syscall
+			sub $t8, $a0, $t9
+			bge $t8, 200, invalid # time restriction
+	
+			bne $t2, 1, reading_loop
+	
+		lw $t2, 0($t1)	# The direction input by the user is in $t2 now.
+		lw $t3, snakeDir # The direction of the snake is in $t3.
+	
+		# The only rule the input has to follow is that it cant be opposite to the snake direction.
+ 	   	# Opposite pairs: 'w'?'s', 'a'?'d'
+ 	  	# If they are NOT opposite, branch to isValid	
+	
+		li $t4, 119 # w
+		li $t5, 115 # s
+		li $t6, 97 # a
+		li $t7, 100 # d
+	
+		beq $t3, $t4, chk1 # If $t3 = w
+		beq $t3, $t5, chk2 # If $t3 = s
+		beq $t3, $t6, chk3 # If $t3 = a
+		beq $t3, $t7, chk4 # If $t3 = d	
+		j invalid
+	
+		chk1:
+			beq $t2, $t5, invalid # If $t2 = s, they are opposites
+			j isValid
+	
+		chk2:
+			beq $t2, $t4, invalid # If $t2 = w, they are opposites
+			j isValid
+	
+		chk3:
+			beq $t2, $t7, invalid # If $t2 = d, they are opposites
+			j isValid
+	
+		chk4:
+			beq $t2, $t6, invalid # If $t2 = a, they are opposites
+			j isValid
+		
+		isValid:
+		
+			sw $t2, snakeDir
+	
+		invalid:
 
-		jr $ra
+	li $v0, 30
+	syscall
+	sub $t9, $a0, $t9
+	blt $t9, 200, input_loop
+	
+	jr $ra		
 
-
+	
 
 
 
@@ -477,10 +504,10 @@ isEating: # This function returns to $v0 wether or not the snake is gonna eat an
 backmain3:
 		jr $ra
 
-GenApple:
+GenApple: # Generates coordinates for the apple and returns them to $v0 and $v1
 
-	la $t2, xAllPossibleCoords
-	la $t2, yAllPossibleCoords
+	la $t4, xAllPossibleCoords
+	la $t5, yAllPossibleCoords
 	sw $ra, rastorage
 
 	# Firstly, we want to append every coordinate in the map that is not inside the snake to this array.
@@ -495,28 +522,67 @@ GenApple:
 		innerforloop:	
 			move $a0, $t0
 			move $a1, $t1
-			jal isInSnake
+			la $t9, xSnake
+			move $a2, $t9
+			lw $t9, snakeSize
+			move $a3, $t9 
+			
+			sw $t0, var1storage # Storing variables $t0, $t1, $t2 in memory.
+			sw $t1, var2storage			
+			sw $t2, var3storage			
+			
+			jal isInSnake # Another function is called (temporary variables like $t0 and $t1 have now garbage values in them).
+			
+			lw $t0, var1storage # Loading variables $t0, $t1, $t2 from memory to restore them.
+			lw $t1, var2storage			
+			lw $t2, var3storage				
+
 			beq $v0, 1, notAppend
 			
 			# APPEND HERE
+			la $t4, xAllPossibleCoords
+			la $t5, yAllPossibleCoords
+	
+			sll $t3, $t2, 2
+			add $t6, $t4, $t3 # $t6 = current index * 4 + x array adress 
+			add $t7, $t5, $t3 # $t7 = current index * 4 + y array adress 	
 			
+			sw $t0, 0($t6)
+			sw $t1, 0($t7)
+			
+			addi $t2, $t2, 1		
 			
 			notAppend:
 
 			addi $t1, $t1, 1
 			bne $t1, 16, innerforloop
 			
+		addi $t0, $t0, 1	
 		bne $t0, 16, outerforloop
-		addi $t0, $t0, 1
-		j outerforloop
+	
+	move $a0, $t2
+	li $v0, 1
+	syscall
+		
+	# Now that we have the array and its size
 
-			
+	li $v0, 30
+	syscall
+	add $a1, $t2, -1
+	li $v0, 42	
+	syscall        	 	# This syscall generates a random number between 0 and the size of the vector - 1 inclusive and inserts it into $a0
+	sll $a0, $a0, 2
 
-
-
-
-
-
+	la $t4, xAllPossibleCoords
+	la $t5, yAllPossibleCoords
+	
+	add $t0, $a0, $t4
+	lw $v0, 0($t0)
+	add $t0, $a0, $t5
+	lw $v1, 0($t0)
+				
+	lw $ra, rastorage
+	jr $ra
 
 
 
@@ -572,9 +638,4 @@ isDead: # Returns to $v0 wether the snake is dead or not.
 		jr $ra
 	
 
-Sleep:
 
-	li $a0, 200
-	li $v0, 32
-	syscall
-	jr $ra 
