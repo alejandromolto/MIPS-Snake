@@ -23,45 +23,47 @@ tdata:.word 0xFFFF000C
 
 mainMenuMessage: .asciiz "\n\n\n\n\n\n\n**WELCOME TO MIPS-SNAKE** \n Work done by alejandromolto. \n \n OPTIONS: \n \n (1) Play Snake. \n (2) Settings. \n (3) Exit. \n\n\n\n\n\n\n"
 optionsMenuMessage: .asciiz "\n\n\n\n\n\n\n**SETTINGS:** \n \n DIFFICULTY: \n\n (1) Easy. \n (2) Mid. \n (3) Hard. \n\n\n\n\n\n\n "
-lostMenuMessage: .asciiz "\n\n\n\n\n\n\n**YOU DIED:** \n \n  \n\n (1) Play Again. \n (2) Main menu. \n (3) Exit. \n\n\n\n\n\n\n "
+lostMenuMessage: .asciiz "\n\n\n\n\n\n\n**YOU DIED** \n \n  \n\n (1) Play Again. \n (2) Main menu. \n (3) Exit. \n\n\n\n\n\n\n "
 .text
 .globl main
 
 main:
-
-	la $a0, mainMenuMessage
-	jal menu
-	li $s1, 0
-	beq $v0, 49, game
-	beq $v0, 50, gameOptions
-	beq $v0, 51, exit
+	
+	li $s0, 125  # Variable preserved across temporary calls. Represents the length of each tick in miliseconds (by default 200ms).
+	
+	mainMenu:
+	
+		la $a0, mainMenuMessage
+		jal menu
+		beq $v0, 49, game
+		beq $v0, 50, gameOptions
+		beq $v0, 51, exit
 	
 	game:
 	
-	# INITIALIZING THE SNAKE VALUES.
-	
-	beq $s1, 1, postSpeedInit
-	li $s0, 200 # Variable preserved across temporary calls. Represents the length of each tick in miliseconds (by default 200ms).
-	
-	postSpeedInit:
-	li $t1, 2
-	sw $t1, snakeSize	
+		# INITIALIZING THE SNAKE VALUES.
+		
+		li $t0, 100
+		sw $t0, snakeDir # Direction (100 or 'd' by default)
+		
+		li $t1, 2
+		sw $t1, snakeSize # Size (two by default)
 
-	la $a0, xSnake
-	li $t1, 4
-	sw $t1, 0($a0)
+		la $a0, xSnake
+		li $t1, 4
+		sw $t1, 0($a0) # Head coordinate (x)
 
-	la $a1, ySnake
-	li $t1, 7
-	sw $t1, 0($a1)    
+		la $a1, ySnake
+		li $t1, 7
+		sw $t1, 0($a1)  # Head coordinate (y)   
     
-	la $a0, xSnake
-	li $t1, 3
-	sw $t1, 4($a0)
+		la $a0, xSnake
+		li $t1, 3
+		sw $t1, 4($a0) # Body coordinate (x)
 
-	la $a1, ySnake
-	li $t1, 7
-	sw $t1, 4($a1)  
+		la $a1, ySnake
+		li $t1, 7
+		sw $t1, 4($a1) # Body coordinate (y)   
 	
 	gameLoop:
 		jal print
@@ -73,14 +75,14 @@ main:
 			sw $v1, yApple
 	
 		noApple:
-		beq $v0, 0, notExtend
-		jal updateAndExtend
-		j keepgoing
+			beq $v0, 0, notExtend
+			jal updateAndExtend
+			j keepgoing
 		notExtend:
 			jal update
 		keepgoing:
-		jal isDead
-		beq $v0, 1, exitGame
+			jal isDead
+			beq $v0, 1, exitGame
 
 		j gameLoop
 	
@@ -92,26 +94,24 @@ main:
 		beq $v0, 51, hard
 		
 		easy:
-			li $s0, 200
-			li $s1, 0
-			j main
+			li $s0, 125
+			j mainMenu
 		mid:
-			li $s0, 150		
-			li $s1, 1
-			j main
+			li $s0, 100		
+			j mainMenu
 		hard:
-			li $s0, 125	
-			li $s1, 1			
-			j main
+			li $s0, 75	
+			j mainMenu
 
 	exitGame:
 	
 		la $a0 lostMenuMessage
 		jal menu
 		beq $v0, 49, game 
-		beq $v0, 50, main
+		beq $v0, 50, mainMenu
 		beq $v0, 51, exit
 	
+
 	
 	exit:
 		li $v0, 10
