@@ -23,25 +23,27 @@ tdata:.word 0xFFFF000C
 
 mainMenuMessage: .asciiz "\n\n\n\n\n\n\n**WELCOME TO MIPS-SNAKE** \n Work done by alejandromolto. \n \n OPTIONS: \n \n (1) Play Snake. \n (2) Settings. \n (3) Exit. \n\n\n\n\n\n\n"
 optionsMenuMessage: .asciiz "\n\n\n\n\n\n\n**SETTINGS:** \n \n DIFFICULTY: \n\n (1) Easy. \n (2) Mid. \n (3) Hard. \n\n\n\n\n\n\n "
+lostMenuMessage: .asciiz "\n\n\n\n\n\n\n**YOU DIED:** \n \n  \n\n (1) Play Again. \n (2) Main menu. \n (3) Exit. \n\n\n\n\n\n\n "
 .text
 .globl main
 
 main:
 
-	
-	
-	jal mainMenu
-	beq $v0, 49, postSpeedGame
+	la $a0, mainMenuMessage
+	jal menu
+	li $s1, 0
+	beq $v0, 49, game
 	beq $v0, 50, gameOptions
-	beq $v0, 51, exitGame
+	beq $v0, 51, exit
 	
 	game:
 	
-	li $s0, 200 # Variable preserved across temporary calls. Represents the length of each tick in miliseconds (by default 200ms).
-
-	postSpeedGame:
-	
 	# INITIALIZING THE SNAKE VALUES.
+	
+	beq $s1, 1, postSpeedInit
+	li $s0, 200 # Variable preserved across temporary calls. Represents the length of each tick in miliseconds (by default 200ms).
+	
+	postSpeedInit:
 	li $t1, 2
 	sw $t1, snakeSize	
 
@@ -83,33 +85,45 @@ main:
 		j gameLoop
 	
 	gameOptions:
-		jal optionsMenu
+		la $a0, optionsMenuMessage
+		jal menu
 		beq $v0, 49, easy
 		beq $v0, 50, mid
 		beq $v0, 51, hard
 		
 		easy:
 			li $s0, 200
+			li $s1, 0
 			j main
 		mid:
 			li $s0, 150		
+			li $s1, 1
 			j main
 		hard:
-			li $s0, 125				
+			li $s0, 125	
+			li $s1, 1			
 			j main
 
 	exitGame:
+	
+		la $a0 lostMenuMessage
+		jal menu
+		beq $v0, 49, game 
+		beq $v0, 50, main
+		beq $v0, 51, exit
+	
+	
+	exit:
 		li $v0, 10
 		syscall
 
 	
-mainMenu: # Returns to $v0 the option of the user
+menu: # Gets the adress of the string to be printed in $a0 and returns to $v0 the option of the user
 
 	# PRINTING (OUTPUT)
 
 	sw $ra, rastorage2
 	
-	la $a0, mainMenuMessage 
 	jal printString 
 
 	lw $ra, rastorage2
@@ -119,55 +133,21 @@ mainMenu: # Returns to $v0 the option of the user
 	lw $t0, rcontrol
 	lw $t1, rdata
 	
-	mainMenuReadLoop:
+	menuReadLoop:
 	
 		lw $t2, 0($t0)
 		andi $t2, $t2, 0x1
-		bne $t2, 1, mainMenuReadLoop
+		bne $t2, 1, menuReadLoop
 		
 		lw $t2, 0($t1)	# Input
 
-	bgt $t2, 51, mainMenuReadLoop # If input is not on range (0, 3), it goes back to the loop 
-	blt $t2, 49, mainMenuReadLoop
+	bgt $t2, 51, menuReadLoop # If input is not on range (0, 3), it goes back to the loop 
+	blt $t2, 49, menuReadLoop
 
 		
 	move $v0, $t2
 	jr $ra
 
-optionsMenu: # Returns to $v0 the option of the user
-
-	# PRINTING (OUTPUT)
-
-	sw $ra, rastorage2
-	
-	la $a0, optionsMenuMessage 
-	jal printString 
-
-	lw $ra, rastorage2
-	
-	# READING (INPUT)
-	
-	lw $t0, rcontrol
-	lw $t1, rdata
-	
-	optionsMenuReadLoop:
-	
-		lw $t2, 0($t0)
-		andi $t2, $t2, 0x1
-		bne $t2, 1, optionsMenuReadLoop
-		
-		lw $t2, 0($t1)	# Input
-		
-		move $a0, $t2
-		li $v0, 1
-		syscall
-
-	bgt $t2, 51, optionsMenuReadLoop # If input is not on range (0, 3), it goes back to the loop 
-	blt $t2, 49, optionsMenuReadLoop
-
-		
-	move $v0, $t2
-	jr $ra
 			
 printString: # Receives to $a0 the adress of the string
 	
@@ -747,6 +727,3 @@ isDead: # Returns to $v0 wether the snake is dead or not.
 		
 	backmain4:
 		jr $ra
-	
-
-
