@@ -1,5 +1,7 @@
 .data 
 
+display: .space 1024
+
 xSnake: .word -1:256
 ySnake: .word -1:256
 xApple: .word 11
@@ -12,9 +14,15 @@ yAllPossibleCoords: .word -1:256
 
 rastorage: .word 0
 rastorage2: .word 0
+rastorage3: .word 0
 var1storage: .word 0
 var2storage: .word 0
 var3storage: .word 0
+
+snakeColor: .word 0x008000
+snakeHeadColor: .word 0x00FF00
+appleColor: .word 0xFF0000
+grassColor: .word 0x00008B
 
 rcontrol: .word 0xFFFF0000
 rdata: .word 0xFFFF0004
@@ -161,7 +169,7 @@ printString: # Receives to $a0 the adress of the string
 		sw $t0, var1storage # Temporary variable storage (as it is not preserved across procedure calls)
 		
 		move $a0, $t1
-		jal display
+		jal displayChar
 
 		lw $ra, rastorage
 		lw $t0, var1storage		
@@ -172,7 +180,7 @@ printString: # Receives to $a0 the adress of the string
 	menuLoopExit:
 	jr $ra
 
-display: # Receives to $a0 the character it wants to display and it displays it.
+displayChar: # Receives to $a0 the character it wants to display and it displays it.
 
 	writing_loop:
 	lw $t9, tcontrol
@@ -247,7 +255,20 @@ isInSnake: # Receives to $a0 and $a1 coords x and y. Receives to $a2 xSnake (And
 		jr $ra
 
 
-print: 
+
+colorPixel: # This is a function that colors a pixel. It receives to $a0 and $a1 the x and y coordinates and to $a2 the color 
+
+
+	sll $t0, $a1, 4
+	add $t0, $t0, $a0
+	sll $t0, $t0, 2	
+
+	sw $a2, display($t0)
+
+	jr $ra
+
+
+print: # This is a void function that prints the current state of the board
 
 	li $t4, 0
 	li $t8, 0
@@ -259,29 +280,42 @@ print:
 			move $a1, $t4
 			la $a2, xSnake
 			lw $a3, snakeSize
-		
+			
+			sw $t8, var1storage
+			sw $t4, var2storage
 			sw $ra, rastorage
+			
 			jal isInSnake
+			
 			lw $ra, rastorage 	
+			lw $t8, var1storage
+			lw $t4, var2storage		
+		
 		
 			beq $v0, $zero, printElse
 		
 			printSnake:
 				beq $v1, 1 , Head
 				
-				# Print 0x6F (o)
-				li $a0, 0x6F	
+				# Color pixel snake
+				move $a0, $t8
+				move $a1, $t4	
+				lw $a2, snakeColor
+						
 				sw $ra, rastorage	
-				jal display
+				jal colorPixel
 				lw $ra, rastorage
 	
 				j keeploop
 			
 				Head:
-					# Print 0x4F (O)
-					li $a0, 0x4F
+					# Color pixel snake
+					move $a0, $t8
+					move $a1, $t4	
+					lw $a2, snakeHeadColor
+					
 					sw $ra, rastorage	
-					jal display
+					jal colorPixel
 					lw $ra, rastorage
 					
 					j keeploop				
@@ -299,18 +333,22 @@ print:
 				
 				beq $v0, $zero, point			
 				
-					# Print 'a' (a)
-					li $a0, 'a'
+					move $a0, $t8
+					move $a1, $t4	
+					lw $a2, appleColor
+					
 					sw $ra, rastorage
-					jal display
+					jal colorPixel
 					lw $ra, rastorage									
 					j keeploop
 																																	
 				point:												
-				# Print 0x2E (.)
-				li $a0, 0x2E
+				move $a0, $t8
+				move $a1, $t4	
+				lw $a2, grassColor
+					
 				sw $ra, rastorage	
-				jal display
+				jal colorPixel
 				lw $ra, rastorage
 				
 				j keeploop
@@ -323,7 +361,7 @@ print:
 	# Print '\n'
 	li $a0, '\n'
 	sw $ra, rastorage	
-	jal display
+	jal displayChar
 	lw $ra, rastorage
 	
 	li $t8, 0		
