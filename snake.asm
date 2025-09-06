@@ -49,8 +49,14 @@ main:
 	
 	game:
 	
-		# INITIALIZING THE SNAKE VALUES.
+		# INITIALIZING THE SNAKE AND APPLE VALUES.
 		
+		li $t0, 11
+		sw $t0, xApple
+
+		li $t0, 7
+		sw $t0, yApple
+				
 		li $t0, 100
 		sw $t0, snakeDir # Direction (100 or 'd' by default)
 		
