@@ -440,8 +440,8 @@ getDir:	# This function returns to $v0 a direction input by the user
 
 	li $v0, 30
 	syscall
-	sub $t9, $a0, $t9
-	blt $t9, $s0, input_loop
+	sub $t5, $a0, $t9
+	blt $t5, $s0, input_loop
 	
 	move $v0, $t4 # It returns the direction chosen by the user
 	jr $ra		
@@ -702,7 +702,7 @@ GenApple: # Generates coordinates for the apple and returns them to $v0 and $v1
 
 	li $v0, 30
 	syscall
-	add $a1, $t2, -1
+	addi $a1, $t2, -1
 	li $v0, 42	
 	syscall        	 	# This syscall generates a random number between 0 and the size of the vector - 1 inclusive and inserts it into $a0
 	sll $a0, $a0, 2
