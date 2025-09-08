@@ -82,6 +82,7 @@ main:
 	gameLoop:
 		jal print
 		jal getDir
+			sw $v0, snakeDir
 		jal isEating
 		beq $v0, 0, noApple
 		jal GenApple
@@ -379,6 +380,8 @@ print: # This is a void function that prints the current state of the board
 
 getDir:	# This function returns to $v0 a direction input by the user
 
+	lw $t4, snakeDir # The default return is the current direction
+	
 	input_loop:
 		li $v0, 30
 		syscall
@@ -406,37 +409,33 @@ getDir:	# This function returns to $v0 a direction input by the user
 		# The only rule the input has to follow is that it cant be opposite to the snake direction.
  	   	# Opposite pairs: 'w'?'s', 'a'?'d'
  	  	# If they are NOT opposite, branch to isValid	
+
 	
-		li $t4, 119 # w
-		li $t5, 115 # s
-		li $t6, 97 # a
-		li $t7, 100 # d
-	
-		beq $t3, $t4, chk1 # If $t3 = w
-		beq $t3, $t5, chk2 # If $t3 = s
-		beq $t3, $t6, chk3 # If $t3 = a
-		beq $t3, $t7, chk4 # If $t3 = d	
+		beq $t3, 119, chk1 # If $t3 = w
+		beq $t3, 115, chk2 # If $t3 = s
+		beq $t3, 97, chk3 # If $t3 = a
+		beq $t3, 100, chk4 # If $t3 = d	
 		j invalid
 	
 		chk1:
-			beq $t2, $t5, invalid # If $t2 = s, they are opposites
+			beq $t2, 115, invalid # If $t2 = s, they are opposites
 			j isValid
 	
 		chk2:
-			beq $t2, $t4, invalid # If $t2 = w, they are opposites
+			beq $t2, 119, invalid # If $t2 = w, they are opposites
 			j isValid
 	
 		chk3:
-			beq $t2, $t7, invalid # If $t2 = d, they are opposites
+			beq $t2, 100, invalid # If $t2 = d, they are opposites
 			j isValid
 	
 		chk4:
-			beq $t2, $t6, invalid # If $t2 = a, they are opposites
+			beq $t2, 97, invalid # If $t2 = a, they are opposites
 			j isValid
 		
 		isValid:
 		
-			sw $t2, snakeDir
+			move $t4, $t2 # If the direction is valid, it sets the return variable to that direction
 	
 		invalid:
 
@@ -445,6 +444,7 @@ getDir:	# This function returns to $v0 a direction input by the user
 	sub $t9, $a0, $t9
 	blt $t9, $s0, input_loop
 	
+	move $v0, $t4 # It returns the direction chosen by the user
 	jr $ra		
 
 	
