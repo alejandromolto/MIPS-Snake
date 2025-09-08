@@ -382,11 +382,11 @@ getDir:	# This function returns to $v0 a direction input by the user
 
 	lw $t4, snakeDir # The default return is the current direction
 	
+	li $v0, 30
+	syscall
+	move $t9, $a0 # Take the initial time to count the ticks
+	
 	input_loop:
-		li $v0, 30
-		syscall
-		move $t9, $a0
-		
 		
 		lw $t0, rcontrol
 		lw $t1, rdata	
@@ -399,8 +399,7 @@ getDir:	# This function returns to $v0 a direction input by the user
 			li $v0, 30
 			syscall
 			sub $t8, $a0, $t9
-			bge $t8, $s0, invalid # time restriction
-	
+			bge $t8, $s0, invalid # Time restriction
 			bne $t2, 1, reading_loop
 	
 		lw $t2, 0($t1)	# The direction input by the user is in $t2 now.
