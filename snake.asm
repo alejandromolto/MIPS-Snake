@@ -453,70 +453,71 @@ getDir:	# This function returns to $v0 a direction input by the user
 
 update:
 
-# **BODY**
+    # **BODY**
 
-lw $t2, snakeSize
-addi $t2, $t2, -1
-li $t3, 0
-li $t4, 0
-la $t5, xSnake
-la $t6, ySnake
-move $t8, $t2
+    lw $t2, snakeSize
+    addi $t2, $t2, -1
+    li $t3, 0
+    li $t4, 0
+    la $t5, xSnake
+    la $t6, ySnake
+    move $t8, $t2
 
-shiftloop:
-	beq $t8, $zero, shiftdone
-	sll $t4, $t8, 2
-	add $t7, $t6, $t4
-	add $t4, $t5, $t4
-	lw $t3, -4($t7)
-	sw $t3, 0($t7)
-	lw $t3, -4($t4)
-	sw $t3, 0($t4)
-	addi $t8, $t8, -1
-	j shiftloop
-shiftdone:
+    shiftloop:
+        beq $t8, $zero, shiftdone
+        sll $t4, $t8, 2
+        add $t7, $t6, $t4
+        add $t4, $t5, $t4
+        lw $t3, -4($t7)
+        sw $t3, 0($t7)
+        lw $t3, -4($t4)
+        sw $t3, 0($t4)
+        addi $t8, $t8, -1
+        j shiftloop
+        
+    shiftdone:
 
 
-# **HEAD**
+    # **HEAD**
 
-# w : 119
-# s : 115
-# d : 100
-# a : 97
+    # w : 119
+    # s : 115
+    # d : 100
+    # a : 97
 
-lw $t0, snakeDir
+    lw $t0, snakeDir
 
-beq $t0, 119, moveup
-beq $t0, 115, movedown
-beq $t0, 100, moveright
-beq $t0, 97, moveleft
+    beq $t0, 119, moveup
+    beq $t0, 115, movedown
+    beq $t0, 100, moveright
+    beq $t0, 97, moveleft
 
-moveup:
-	lw $t1, ySnake
-	addi $t1, $t1, -1
-	sw $t1, ySnake
-	j backmain
+    moveup:
+        lw $t1, ySnake
+        addi $t1, $t1, -1
+        sw $t1, ySnake
+        j backmain
 
-movedown:
-	lw $t1, ySnake
-	addi $t1, $t1, 1
-	sw $t1, ySnake
-	j backmain
+    movedown:
+        lw $t1, ySnake
+        addi $t1, $t1, 1
+        sw $t1, ySnake
+        j backmain
 
-moveright:
-	lw $t1, xSnake
-	addi $t1, $t1, 1
-	sw $t1, xSnake
-	j backmain
+    moveright:
+        lw $t1, xSnake
+        addi $t1, $t1, 1
+        sw $t1, xSnake
+        j backmain
 
-moveleft:
-	lw $t1, xSnake
-	addi $t1, $t1, -1
-	sw $t1, xSnake
-	j backmain
+    moveleft:
+        lw $t1, xSnake
+        addi $t1, $t1, -1
+        sw $t1, xSnake
+        j backmain
 
-backmain:
-	jr $ra
+    backmain:
+        jr $ra
 
 
 
@@ -525,73 +526,73 @@ backmain:
 
 updateAndExtend:
 
-# **BODY**
+    # **BODY**
 
-lw $t2, snakeSize
-li $t3, 0
-li $t4, 0
-la $t5, xSnake
-la $t6, ySnake
-move $t8, $t2
+    lw $t2, snakeSize
+    li $t3, 0
+    li $t4, 0
+    la $t5, xSnake
+    la $t6, ySnake
+    move $t8, $t2
 
-shiftloop2:
-	beq $t8, $zero, shiftdone2
-	sll $t4, $t8, 2
-	add $t7, $t6, $t4
-	add $t4, $t5, $t4
-	lw $t3, -4($t7)
-	sw $t3, 0($t7)
-	lw $t3, -4($t4)
-	sw $t3, 0($t4)
-	addi $t8, $t8, -1
-	j shiftloop2
-shiftdone2:
+    shiftloop2:
+        beq $t8, $zero, shiftdone2
+        sll $t4, $t8, 2
+        add $t7, $t6, $t4
+        add $t4, $t5, $t4
+        lw $t3, -4($t7)
+        sw $t3, 0($t7)
+        lw $t3, -4($t4)
+        sw $t3, 0($t4)
+        addi $t8, $t8, -1
+        j shiftloop2
+    shiftdone2:
 
-lw $t7, snakeSize # INCREMENTING SIZE OF THE SNAKE
-addi $t7, $t7, 1
-sw $t7, snakeSize
+    lw $t7, snakeSize # INCREMENTING SIZE OF THE SNAKE
+    addi $t7, $t7, 1
+    sw $t7, snakeSize
 
 
-# **HEAD**
+    # **HEAD**
 
-lw $t0, snakeDir
+    lw $t0, snakeDir
 
-# w : 119
-# s : 115
-# d : 100
-# a : 97
+    # w : 119
+    # s : 115
+    # d : 100
+    # a : 97
 
-beq $t0, 119, moveup2
-beq $t0, 115, movedown2
-beq $t0, 100, moveright2
-beq $t0, 97, moveleft2
+    beq $t0, 119, moveup2
+    beq $t0, 115, movedown2
+    beq $t0, 100, moveright2
+    beq $t0, 97, moveleft2
 
-moveup2:
-	lw $t1, ySnake
-	addi $t1, $t1, -1
-	sw $t1, ySnake
-	j backmain2
-	
-movedown2:
-	lw $t1, ySnake
-	addi $t1, $t1, 1
-	sw $t1, ySnake
-	j backmain2
-	
-moveright2:
-	lw $t1, xSnake
-	addi $t1, $t1, 1
-	sw $t1, xSnake
-	j backmain2
-	
-moveleft2:
-	lw $t1, xSnake
-	addi $t1, $t1, -1
-	sw $t1, xSnake
-	j backmain2
-	
-backmain2:
-	jr $ra
+    moveup2:
+        lw $t1, ySnake
+        addi $t1, $t1, -1
+        sw $t1, ySnake
+        j backmain2
+        
+    movedown2:
+        lw $t1, ySnake
+        addi $t1, $t1, 1
+        sw $t1, ySnake
+        j backmain2
+        
+    moveright2:
+        lw $t1, xSnake
+        addi $t1, $t1, 1
+        sw $t1, xSnake
+        j backmain2
+        
+    moveleft2:
+        lw $t1, xSnake
+        addi $t1, $t1, -1
+        sw $t1, xSnake
+        j backmain2
+        
+    backmain2:
+        jr $ra
 
 
 isEating: # This function returns to $v0 wether or not the snake is gonna eat an apple with the current direction
