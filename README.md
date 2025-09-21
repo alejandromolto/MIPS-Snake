@@ -1,9 +1,22 @@
-# Snake Game in MIPS Assembly
+<div align="center">  
+  <h1>Snake Game in MIPS Assembly</h1>  
+  <div>The classic Snake game.</div>  
+     <br>  
 
-A classic **Snake** implementation written in **MIPS assembly** for the **MARS** simulator.  
-This repository is an educational project that demonstrates low-level programming concepts such as **memory-mapped I/O (MMIO)** or **bitmap graphics**.
+  <div>    
+    <img src="https://img.shields.io/badge/language-MIPS Assembly-blue.svg" alt="MIPSAssembly" style="display:inline-block; margin:2px;">    
+    <img src="https://img.shields.io/badge/simulator-MARS-green.svg" alt="SDL2" style="display:inline-block; margin:2px;">    
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" style="display:inline-block; margin:2px;">    
+    <img src="https://img.shields.io/badge/contributions-OPEN-brightgreen.svg" alt="Contributions Open" style="display:inline-block; margin:2px;">  
+  </div> 
+</div> 
 
-![SNAKE GAME](assets/MAIN.gif)
+  <br>  
+
+
+<p align="center">
+  <img src="assets/MAIN.gif" alt="SNAKE GAME">
+</p>
 
 ---
 
@@ -16,7 +29,7 @@ This repository is an educational project that demonstrates low-level programmin
 ---
 
 ## Requirements
-- [MARS MIPS Simulator](http://courses.missouristate.edu/kenvollmar/mars/) (recommended).
+- [MARS MIPS Simulator](http://courses.missouristate.edu/kenvollmar/mars/).
 
 ---
 
